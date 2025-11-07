@@ -127,34 +127,57 @@ public class FileDecompressionPanel extends JPanel {
     // ===== Decode File =====
     private void decodeFile() {
         if (encodedFile == null || codeTableFile == null) {
-            JOptionPane.showMessageDialog(this, "Please load both encoded file and code table!", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Please load both encoded file and code table first!",
+                    "Warning", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         try {
-            // Step 1: Load encoded text
+            // ===== Step 1: Read encoded bits =====
             StringBuilder encodedText = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new FileReader(encodedFile))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    encodedText.append(line);
+                    encodedText.append(line.trim());
                 }
             }
+            String encodedStr = encodedText.toString().replaceAll("\\s+", "");
 
-            // Step 2: Load code table
+            if (encodedStr.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Encoded file appears to be empty or invalid!",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // ===== Step 2: Validate only 0s and 1s =====
+            if (!encodedStr.matches("[01]+")) {
+                JOptionPane.showMessageDialog(this,
+                        "Encoded file contains invalid characters! It should only contain 0 and 1.",
+                        "Invalid File", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // ===== Step 3: Load Huffman Code Table =====
             Map<Character, String> codeMap = huffman.loadCodeTable(codeTableFile);
+            if (codeMap == null || codeMap.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Code table file is empty or invalid!",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-            // Step 3: Build reverse map for decoding
+            // ===== Step 4: Build Reverse Map =====
             Map<String, Character> reverseMap = new HashMap<>();
             for (Map.Entry<Character, String> entry : codeMap.entrySet()) {
                 reverseMap.put(entry.getValue(), entry.getKey());
             }
 
-            // Step 4: Decode
+            // ===== Step 5: Decode =====
             StringBuilder decoded = new StringBuilder();
             StringBuilder temp = new StringBuilder();
-
-            for (char bit : encodedText.toString().toCharArray()) {
+            for (char bit : encodedStr.toCharArray()) {
                 temp.append(bit);
                 if (reverseMap.containsKey(temp.toString())) {
                     decoded.append(reverseMap.get(temp.toString()));
@@ -162,12 +185,24 @@ public class FileDecompressionPanel extends JPanel {
                 }
             }
 
+            if (decoded.length() == 0) {
+                JOptionPane.showMessageDialog(this,
+                        "No valid decoding found! Make sure you used the correct code table.",
+                        "Decode Failed", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // ===== Step 6: Show Output =====
             previewArea.setText(decoded.toString());
-            JOptionPane.showMessageDialog(this, "Decoding completed successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Decoding completed successfully!",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error decoding file!", "Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error during decoding!\n" + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -191,7 +226,8 @@ public class FileDecompressionPanel extends JPanel {
 
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
                 writer.write(decodedText);
-                JOptionPane.showMessageDialog(this, "Decoded file saved successfully!", "Saved", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Decoded file saved successfully!", "Saved",
+                        JOptionPane.INFORMATION_MESSAGE);
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(this, "Error saving decoded file!", "Error", JOptionPane.ERROR_MESSAGE);
             }

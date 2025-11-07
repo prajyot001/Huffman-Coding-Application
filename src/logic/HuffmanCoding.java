@@ -157,19 +157,23 @@ public class HuffmanCoding {
 
     // ===== Utility: Load Huffman Code Table from File =====
     public Map<Character, String> loadCodeTable(File inputFile) throws IOException {
-        Map<Character, String> codeTable = new HashMap<>();
+    Map<Character, String> codeTable = new HashMap<>();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(":");
-                if (parts.length == 2) {
-                    codeTable.put(parts[0].charAt(0), parts[1]);
-                }
+    try (BufferedReader reader = new BufferedReader(new FileReader(inputFile))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+            line = line.trim();
+            if (line.isEmpty() || !line.contains(":")) continue; // <-- SKIP invalid/blank lines
+
+            String[] parts = line.split(":");
+            if (parts.length == 2 && !parts[0].isEmpty()) {
+                codeTable.put(parts[0].charAt(0), parts[1].trim());
             }
         }
-
-        this.huffmanCode = codeTable;
-        return codeTable;
     }
+
+    this.huffmanCode = codeTable;
+    return codeTable;
+}
+
 }

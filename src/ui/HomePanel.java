@@ -35,10 +35,10 @@ public class HomePanel extends JPanel {
         buttonPanel.setBackground(Theme.SECONDARY_COLOR);
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 200, 60, 200));
 
-        JButton textCompressBtn = new JButton("🔹 Text Compression");
-        JButton textDecompressBtn = new JButton("🔸 Text Decompression");
-        JButton fileCompressBtn = new JButton("📂 File Compression");
-        JButton fileDecompressBtn = new JButton("📑 File Decompression");
+        JButton textCompressBtn = new JButton(" Text Compression");
+        JButton textDecompressBtn = new JButton(" Text Decompression");
+        JButton fileCompressBtn = new JButton(" File Compression");
+        JButton fileDecompressBtn = new JButton(" File Decompression");
 
         styleButton(textCompressBtn, Theme.BUTTON_COLOR);
         styleButton(textDecompressBtn, new Color(255, 167, 38));
