@@ -11,7 +11,7 @@ public class AppContainer extends JFrame {
     public AppContainer() {
         setTitle(" Huffman Coding Application");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(950, 650);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
         getContentPane().setBackground(Theme.SECONDARY_COLOR);
 
