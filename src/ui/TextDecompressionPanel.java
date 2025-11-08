@@ -106,65 +106,79 @@ public class TextDecompressionPanel extends JPanel {
         btn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
     }
 
-    // ===== Decode Action =====
+    // ===== Decode from Text Areas =====
     private void decodeText() {
-        String encodedText = encodedArea.getText().trim();
-        String codeTableText = codeTableArea.getText().trim();
+    String encodedText = encodedArea.getText().trim();
+    String codeTableText = codeTableArea.getText().trim();
 
-        if (encodedText.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter or paste encoded text!", "Warning", JOptionPane.WARNING_MESSAGE);
+    if (encodedText.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Please enter encoded binary text!", "Warning", JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+
+    if (codeTableText.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Please provide the Huffman code table!", "Warning", JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+
+    try {
+        // Step 1: Parse Huffman code table
+        Map<Character, String> codeMap = new HashMap<>();
+        String[] lines = codeTableText.split("\\r?\\n");
+        for (String line : lines) {
+            line = line.trim();
+            if (line.isEmpty() || !line.contains(":")) continue;
+            String[] parts = line.split(":");
+            if (parts.length == 2 && !parts[0].isEmpty()) {
+                String key = parts[0].equals("\\n") ? "\n" : parts[0];
+                codeMap.put(key.charAt(0), parts[1].trim());
+            }
+        }
+
+        if (codeMap.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Invalid code table format!", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        if (codeTableText.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please provide the Huffman code table!", "Warning", JOptionPane.WARNING_MESSAGE);
-            return;
+        // Step 2: Build reverse map for decoding
+        Map<String, Character> reverseMap = new HashMap<>();
+        for (Map.Entry<Character, String> e : codeMap.entrySet()) {
+            reverseMap.put(e.getValue(), e.getKey());
         }
 
-        try {
-            Map<Character, String> codeMap = new HashMap<>();
-            String[] lines = codeTableText.split("\\r?\\n");
-            for (String line : lines) {
-                if (line.contains(":")) {
-                    String[] parts = line.split(":");
-                    if (parts.length == 2) {
-                        char ch = parts[0].trim().charAt(0);
-                        String code = parts[1].trim();
-                        codeMap.put(ch, code);
-                    }
-                }
+        // Step 3: Clean encoded input (remove invalid chars)
+        encodedText = encodedText.replaceAll("[^01\\n]", ""); // ✅ keep only bits and newlines
+
+        // Step 4: Decode each line separately
+        String[] encodedLines = encodedText.split("\\r?\\n");
+        StringBuilder decoded = new StringBuilder();
+
+        for (String encodedLine : encodedLines) {
+            if (encodedLine.trim().isEmpty()) {
+                decoded.append("\n");
+                continue;
             }
 
-            if (codeMap.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Invalid code table format!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Build reverse map (code → char)
-            Map<String, Character> reverseMap = new HashMap<>();
-            for (Map.Entry<Character, String> e : codeMap.entrySet()) {
-                reverseMap.put(e.getValue(), e.getKey());
-            }
-
-            // Decode
-            StringBuilder decoded = new StringBuilder();
             StringBuilder temp = new StringBuilder();
-
-            for (char bit : encodedText.toCharArray()) {
+            for (char bit : encodedLine.toCharArray()) {
                 temp.append(bit);
                 if (reverseMap.containsKey(temp.toString())) {
                     decoded.append(reverseMap.get(temp.toString()));
                     temp.setLength(0);
                 }
             }
-
-            outputArea.setText(decoded.toString());
-            JOptionPane.showMessageDialog(this, "Decoding successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error during decoding!", "Error", JOptionPane.ERROR_MESSAGE);
+            decoded.append("\n");
         }
+
+        outputArea.setText(decoded.toString());
+        JOptionPane.showMessageDialog(this, "Decoding successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this, "Error during decoding!", "Error", JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
     }
+}
+
 
     // ===== Save Decoded Text =====
     private void saveDecodedText() {

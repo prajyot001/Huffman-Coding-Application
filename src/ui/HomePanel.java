@@ -10,7 +10,7 @@ public class HomePanel extends JPanel {
         setBackground(Theme.SECONDARY_COLOR);
 
         // ===== Header =====
-        JLabel title = new JLabel("🧠 Text Compression using Huffman Coding", SwingConstants.CENTER);
+        JLabel title = new JLabel(" Text Compression using Huffman Coding", SwingConstants.CENTER);
         title.setFont(Theme.TITLE_FONT);
         title.setOpaque(true);
         title.setBackground(Theme.PRIMARY_COLOR);

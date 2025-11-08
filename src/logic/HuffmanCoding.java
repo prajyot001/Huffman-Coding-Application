@@ -50,7 +50,8 @@ public class HuffmanCoding {
 
     // ===== Encode Text =====
     public String encode(String text) {
-        if (text == null || text.isEmpty()) return "";
+        if (text == null || text.isEmpty())
+            return "";
 
         // Step 1: Frequency map
         Map<Character, Integer> freqMap = buildFrequencyMap(text);
@@ -65,7 +66,13 @@ public class HuffmanCoding {
         // Step 4: Encode text
         StringBuilder encoded = new StringBuilder();
         for (char c : text.toCharArray()) {
-            encoded.append(huffmanCode.get(c));
+            String code = huffmanCode.get(c);
+            if (code != null) {
+                encoded.append(code);
+            } else {
+                // if unseen char (shouldn’t happen), just skip
+                System.err.println("Warning: No code for character: " + c);
+            }
         }
 
         return encoded.toString();
@@ -73,7 +80,8 @@ public class HuffmanCoding {
 
     // ===== Decode Text =====
     public String decode(String encodedText) {
-        if (root == null || encodedText == null || encodedText.isEmpty()) return "";
+        if (root == null || encodedText == null || encodedText.isEmpty())
+            return "";
 
         StringBuilder decoded = new StringBuilder();
         Node current = root;
@@ -107,6 +115,11 @@ public class HuffmanCoding {
             pq.add(new Node(entry.getKey(), entry.getValue()));
         }
 
+        if (pq.size() == 1) {
+            // special case: only one unique char
+            pq.add(new Node('\0', 1));
+        }
+
         while (pq.size() > 1) {
             Node left = pq.poll();
             Node right = pq.poll();
@@ -119,9 +132,10 @@ public class HuffmanCoding {
 
     // ===== Generate Huffman Codes (recursive) =====
     private void generateCodes(Node node, String code, Map<Character, String> map) {
-        if (node == null) return;
+        if (node == null)
+            return;
         if (node.isLeaf()) {
-            map.put(node.ch, code.length() > 0 ? code : "0"); // Handle single-char text
+            map.put(node.ch, code.length() > 0 ? code : "0"); // handle single-char case
         }
         generateCodes(node.left, code + '0', map);
         generateCodes(node.right, code + '1', map);
@@ -144,36 +158,57 @@ public class HuffmanCoding {
     }
 
     // ===== Utility: Save Huffman Codes (for decompression use) =====
-    public void saveCodeTable(File outputFile) throws IOException {
-        if (huffmanCode == null) return;
-
+    public void saveEncodedWithTable(String encodedData, File outputFile) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+            writer.write("# HuffmanCodeTable\n");
             for (var entry : huffmanCode.entrySet()) {
-                writer.write(entry.getKey() + ":" + entry.getValue());
+                // Preserve newline chars visibly
+                String key = (entry.getKey() == '\n') ? "\\n" : String.valueOf(entry.getKey());
+                writer.write(key + ":" + entry.getValue());
                 writer.newLine();
             }
+            writer.write("# EncodedData\n");
+            writer.write(encodedData);
         }
     }
 
-    // ===== Utility: Load Huffman Code Table from File =====
-    public Map<Character, String> loadCodeTable(File inputFile) throws IOException {
-    Map<Character, String> codeTable = new HashMap<>();
+    // ====== Load Encoded File and Extract Code Table + Data ======
+    public Map<String, String> loadEmbeddedEncodedFile(File file) throws IOException {
+        Map<Character, String> codeTable = new HashMap<>();
+        StringBuilder encodedData = new StringBuilder();
+        boolean readingCodes = false;
+        boolean readingEncoded = false;
 
-    try (BufferedReader reader = new BufferedReader(new FileReader(inputFile))) {
-        String line;
-        while ((line = reader.readLine()) != null) {
-            line = line.trim();
-            if (line.isEmpty() || !line.contains(":")) continue; // <-- SKIP invalid/blank lines
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.startsWith("# HuffmanCodeTable")) {
+                    readingCodes = true;
+                    continue;
+                } else if (line.startsWith("# EncodedData")) {
+                    readingCodes = false;
+                    readingEncoded = true;
+                    continue;
+                }
 
-            String[] parts = line.split(":");
-            if (parts.length == 2 && !parts[0].isEmpty()) {
-                codeTable.put(parts[0].charAt(0), parts[1].trim());
+                if (readingCodes && line.contains(":")) {
+                    String[] parts = line.split(":");
+                    if (parts.length == 2 && !parts[0].isEmpty()) {
+                        String key = parts[0].equals("\\n") ? "\n" : parts[0];
+                        codeTable.put(key.charAt(0), parts[1].trim());
+                    }
+                } else if (readingEncoded && !line.isEmpty()) {
+                    // Merge all encoded lines (multi-line support)
+                    encodedData.append(line.trim());
+                }
             }
         }
+
+        this.huffmanCode = codeTable;
+
+        Map<String, String> result = new HashMap<>();
+        result.put("encoded", encodedData.toString());
+        return result;
     }
-
-    this.huffmanCode = codeTable;
-    return codeTable;
-}
-
 }

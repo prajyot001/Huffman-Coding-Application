@@ -60,7 +60,7 @@ public class TextCompressionPanel extends JPanel {
         outputArea.setWrapStyleWord(true);
 
         JPanel tablePanel = new JPanel(new BorderLayout());
-        codeTable = new JTable(new DefaultTableModel(new Object[]{"Character", "Code"}, 0));
+        codeTable = new JTable(new DefaultTableModel(new Object[] { "Character", "Code" }, 0));
         tablePanel.add(new JScrollPane(codeTable), BorderLayout.CENTER);
         tablePanel.setBorder(BorderFactory.createTitledBorder("Huffman Codes"));
 
@@ -83,19 +83,17 @@ public class TextCompressionPanel extends JPanel {
 
         JButton compressBtn = new JButton(" Compress");
         JButton saveEncodedBtn = new JButton(" Save Encoded File");
-        JButton saveCodeTableBtn = new JButton(" Save Code Table");
         JButton clearBtn = new JButton(" Clear");
         JButton backBtn = new JButton(" Back");
 
         styleButton(compressBtn, Theme.BUTTON_COLOR);
         styleButton(saveEncodedBtn, new Color(46, 204, 113));
-        styleButton(saveCodeTableBtn, new Color(121, 134, 203));
         styleButton(clearBtn, new Color(255, 167, 38));
         styleButton(backBtn, new Color(189, 189, 189));
 
         buttonPanel.add(compressBtn);
         buttonPanel.add(saveEncodedBtn);
-        buttonPanel.add(saveCodeTableBtn);
+
         buttonPanel.add(clearBtn);
         buttonPanel.add(backBtn);
 
@@ -104,7 +102,6 @@ public class TextCompressionPanel extends JPanel {
         // ===== Button Actions =====
         compressBtn.addActionListener(e -> compressText());
         saveEncodedBtn.addActionListener(e -> saveEncodedFile());
-        saveCodeTableBtn.addActionListener(e -> saveCodeTable());
         clearBtn.addActionListener(e -> clearAll());
         backBtn.addActionListener(e -> parent.showHomePanel());
     }
@@ -124,7 +121,8 @@ public class TextCompressionPanel extends JPanel {
     private void compressText() {
         String text = inputArea.getText().trim();
         if (text.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter some text first!", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please enter some text first!", "Warning",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -136,7 +134,7 @@ public class TextCompressionPanel extends JPanel {
             DefaultTableModel model = (DefaultTableModel) codeTable.getModel();
             model.setRowCount(0);
             for (Map.Entry<Character, String> entry : huffman.getHuffmanCodes().entrySet()) {
-                model.addRow(new Object[]{entry.getKey(), entry.getValue()});
+                model.addRow(new Object[] { entry.getKey(), entry.getValue() });
             }
 
             // Update stats
@@ -146,8 +144,7 @@ public class TextCompressionPanel extends JPanel {
 
             statsLabel.setText(String.format(
                     "Original: %d bits | Encoded: %d bits | Compression: %.2f%%",
-                    originalBits, encodedBits, compression
-            ));
+                    originalBits, encodedBits, compression));
 
             JOptionPane.showMessageDialog(this, "Compression successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
@@ -157,6 +154,7 @@ public class TextCompressionPanel extends JPanel {
     }
 
     // ===== Save Encoded File =====
+    // ===== Save Encoded File (with embedded table) =====
     private void saveEncodedFile() {
         String encodedText = outputArea.getText().trim();
         if (encodedText.isEmpty()) {
@@ -165,7 +163,7 @@ public class TextCompressionPanel extends JPanel {
         }
 
         JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Save Encoded File");
+        chooser.setDialogTitle("Save Encoded File (with Code Table)");
         int result = chooser.showSaveDialog(this);
 
         if (result == JFileChooser.APPROVE_OPTION) {
@@ -174,38 +172,16 @@ public class TextCompressionPanel extends JPanel {
                 file = new File(file.getAbsolutePath() + ".txt");
 
             try {
-                huffman.saveEncodedFile(encodedText, file);
-                JOptionPane.showMessageDialog(this, "Encoded file saved successfully!", "Saved", JOptionPane.INFORMATION_MESSAGE);
+                huffman.saveEncodedWithTable(encodedText, file);
+                JOptionPane.showMessageDialog(this, "File saved with embedded Huffman table!", "Saved",
+                        JOptionPane.INFORMATION_MESSAGE);
             } catch (IOException e) {
-                JOptionPane.showMessageDialog(this, "Error saving encoded file!", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error saving file!", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
-    // ===== Save Code Table =====
-    private void saveCodeTable() {
-        if (huffman.getHuffmanCodes() == null || huffman.getHuffmanCodes().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please compress text first!", "Warning", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Save Huffman Code Table");
-        int result = chooser.showSaveDialog(this);
-
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File file = chooser.getSelectedFile();
-            if (!file.getName().endsWith(".txt"))
-                file = new File(file.getAbsolutePath() + ".txt");
-
-            try {
-                huffman.saveCodeTable(file);
-                JOptionPane.showMessageDialog(this, "Code table saved successfully!", "Saved", JOptionPane.INFORMATION_MESSAGE);
-            } catch (IOException e) {
-                JOptionPane.showMessageDialog(this, "Error saving code table!", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
+   
 
     // ===== Clear Fields =====
     private void clearAll() {

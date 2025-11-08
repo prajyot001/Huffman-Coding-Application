@@ -60,28 +60,21 @@ public class FileDecompressionPanel extends JPanel {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         buttonPanel.setBackground(Theme.SECONDARY_COLOR);
 
-        JButton loadEncodedBtn = new JButton(" Load Encoded File");
-        JButton loadCodeTableBtn = new JButton(" Load Code Table");
+       
         JButton decodeBtn = new JButton(" Decode");
         JButton saveBtn = new JButton(" Save Decoded File");
         JButton backBtn = new JButton(" Back");
 
-        styleButton(loadEncodedBtn, new Color(255, 167, 38));
-        styleButton(loadCodeTableBtn, new Color(121, 134, 203));
         styleButton(decodeBtn, Theme.ACCENT_COLOR);
         styleButton(saveBtn, new Color(46, 204, 113));
         styleButton(backBtn, new Color(189, 189, 189));
-
-        buttonPanel.add(loadEncodedBtn);
-        buttonPanel.add(loadCodeTableBtn);
+        
         buttonPanel.add(decodeBtn);
         buttonPanel.add(saveBtn);
         buttonPanel.add(backBtn);
         add(buttonPanel, BorderLayout.SOUTH);
 
         // ===== Button Actions =====
-        loadEncodedBtn.addActionListener(e -> loadEncodedFile());
-        loadCodeTableBtn.addActionListener(e -> loadCodeTable());
         decodeBtn.addActionListener(e -> decodeFile());
         saveBtn.addActionListener(e -> saveDecodedFile());
         backBtn.addActionListener(e -> parent.showHomePanel());
@@ -111,73 +104,29 @@ public class FileDecompressionPanel extends JPanel {
         }
     }
 
-    // ===== Load Code Table =====
-    private void loadCodeTable() {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Select Huffman Code Table");
-        int result = chooser.showOpenDialog(this);
-
-        if (result == JFileChooser.APPROVE_OPTION) {
-            codeTableFile = chooser.getSelectedFile();
-            codeTableLabel.setText("Code Table: " + codeTableFile.getName());
-            JOptionPane.showMessageDialog(this, "Code table loaded successfully!");
-        }
-    }
-
     // ===== Decode File =====
     private void decodeFile() {
-        if (encodedFile == null || codeTableFile == null) {
-            JOptionPane.showMessageDialog(this,
-                    "Please load both encoded file and code table first!",
-                    "Warning", JOptionPane.WARNING_MESSAGE);
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Select Encoded File (with Embedded Huffman Table)");
+        int result = chooser.showOpenDialog(this);
+        if (result != JFileChooser.APPROVE_OPTION)
             return;
-        }
+
+        File file = chooser.getSelectedFile();
 
         try {
-            // ===== Step 1: Read encoded bits =====
-            StringBuilder encodedText = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new FileReader(encodedFile))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    encodedText.append(line.trim());
-                }
-            }
-            String encodedStr = encodedText.toString().replaceAll("\\s+", "");
+            Map<String, String> data = huffman.loadEmbeddedEncodedFile(file);
+            String encoded = data.get("encoded");
 
-            if (encodedStr.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        "Encoded file appears to be empty or invalid!",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // ===== Step 2: Validate only 0s and 1s =====
-            if (!encodedStr.matches("[01]+")) {
-                JOptionPane.showMessageDialog(this,
-                        "Encoded file contains invalid characters! It should only contain 0 and 1.",
-                        "Invalid File", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            // ===== Step 3: Load Huffman Code Table =====
-            Map<Character, String> codeMap = huffman.loadCodeTable(codeTableFile);
-            if (codeMap == null || codeMap.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        "Code table file is empty or invalid!",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // ===== Step 4: Build Reverse Map =====
             Map<String, Character> reverseMap = new HashMap<>();
-            for (Map.Entry<Character, String> entry : codeMap.entrySet()) {
+            for (Map.Entry<Character, String> entry : huffman.getHuffmanCodes().entrySet()) {
                 reverseMap.put(entry.getValue(), entry.getKey());
             }
 
-            // ===== Step 5: Decode =====
             StringBuilder decoded = new StringBuilder();
             StringBuilder temp = new StringBuilder();
-            for (char bit : encodedStr.toCharArray()) {
+
+            for (char bit : encoded.toCharArray()) {
                 temp.append(bit);
                 if (reverseMap.containsKey(temp.toString())) {
                     decoded.append(reverseMap.get(temp.toString()));
@@ -185,24 +134,11 @@ public class FileDecompressionPanel extends JPanel {
                 }
             }
 
-            if (decoded.length() == 0) {
-                JOptionPane.showMessageDialog(this,
-                        "No valid decoding found! Make sure you used the correct code table.",
-                        "Decode Failed", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            // ===== Step 6: Show Output =====
             previewArea.setText(decoded.toString());
-            JOptionPane.showMessageDialog(this,
-                    "Decoding completed successfully!",
-                    "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Decoded successfully from embedded file!");
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Error during decoding!\n" + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error reading embedded file!", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
