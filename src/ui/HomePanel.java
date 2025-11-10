@@ -27,13 +27,15 @@ public class HomePanel extends JPanel {
         subtitle.setFont(Theme.SUBTITLE_FONT);
         subtitle.setForeground(new Color(50, 50, 50));
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-        subtitle.setBorder(BorderFactory.createEmptyBorder(30, 0, 30, 0));
+        subtitle.setBorder(BorderFactory.createEmptyBorder(25, 0, 25, 0));
         centerPanel.add(subtitle);
 
-        // ===== Buttons Layout =====
-        JPanel buttonPanel = new JPanel(new GridLayout(2, 2, 40, 25));
+        // ===== Buttons Layout (VERTICAL STACK) =====
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
         buttonPanel.setBackground(Theme.SECONDARY_COLOR);
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 200, 60, 200));
+        buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 350, 40, 350));
 
         JButton textCompressBtn = new JButton(" Text Compression");
         JButton textDecompressBtn = new JButton(" Text Decompression");
@@ -45,16 +47,28 @@ public class HomePanel extends JPanel {
         styleButton(fileCompressBtn, new Color(46, 204, 113));
         styleButton(fileDecompressBtn, new Color(121, 134, 203));
 
+        Dimension btnSize = new Dimension(250, 60); // ✅ Balanced vertical size
+        textCompressBtn.setMaximumSize(btnSize);
+        textDecompressBtn.setMaximumSize(btnSize);
+        fileCompressBtn.setMaximumSize(btnSize);
+        fileDecompressBtn.setMaximumSize(btnSize);
+
+        // Add spacing between buttons
+        buttonPanel.add(textCompressBtn);
+        buttonPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        buttonPanel.add(textDecompressBtn);
+        buttonPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        buttonPanel.add(fileCompressBtn);
+        buttonPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        buttonPanel.add(fileDecompressBtn);
+
+        // Button Actions
         textCompressBtn.addActionListener(e -> parent.showTextCompressionPanel());
         textDecompressBtn.addActionListener(e -> parent.showTextDecompressionPanel());
         fileCompressBtn.addActionListener(e -> parent.showFileCompressionPanel());
         fileDecompressBtn.addActionListener(e -> parent.showFileDecompressionPanel());
 
-        buttonPanel.add(textCompressBtn);
-        buttonPanel.add(textDecompressBtn);
-        buttonPanel.add(fileCompressBtn);
-        buttonPanel.add(fileDecompressBtn);
-
+        // Add button panel to center
         centerPanel.add(buttonPanel);
         add(centerPanel, BorderLayout.CENTER);
 
@@ -67,14 +81,19 @@ public class HomePanel extends JPanel {
     }
 
     private void styleButton(JButton btn, Color color) {
-        btn.setFont(Theme.BUTTON_FONT);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 15));
         btn.setBackground(color);
-        btn.setForeground(Theme.TEXT_COLOR);
+        btn.setForeground(Color.WHITE);
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(color.darker(), 1, true),
+                BorderFactory.createEmptyBorder(10, 25, 10, 25)
+        ));
         btn.setOpaque(true);
 
+        // Hover effect
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
